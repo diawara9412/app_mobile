@@ -86,4 +86,10 @@ dependencies {
     implementation(libs.androidx.material.icons.extended) // Add this line
     implementation("com.google.accompanist:accompanist-pager:0.28.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
+    // Pour Retrofit et GSON (appel HTTP vers Cloud Vision)
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+
+// Pour encoder l’image en base64
+    implementation ("org.apache.commons:commons-io:1.3.2")
 }
