@@ -2,9 +2,10 @@ package com.example.jeu
 
 import android.net.Uri
 import android.os.Environment
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,8 +23,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -31,15 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.zIndex
 import coil.compose.rememberAsyncImagePainter
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.HorizontalPagerIndicator
-import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.pager.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.absoluteValue
 
 data class CategoryItem(val imageResId: Int, val name: String)
 
@@ -65,7 +67,7 @@ fun AccueilScreen() {
     val primaryColor = Color(0xFFFFA500) // Orange color
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Fixed carousel at the top
+        // Fixed carousel at the top with enhanced design
         if (carouselImages.isNotEmpty()) {
             val pagerState = rememberPagerState()
             val coroutineScope = rememberCoroutineScope()
@@ -81,52 +83,131 @@ fun AccueilScreen() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(220.dp)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
                     .zIndex(1f)
             ) {
-                HorizontalPager(
-                    count = carouselImages.size,
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { page ->
-                    Image(
-                        painter = painterResource(id = carouselImages[page]),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                // Gradient overlay for better text visibility
-                Box(
+                // Shadow effect for the carousel
+                Card(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.6f)
-                                ),
-                                startY = 300f,
-                                endY = 900f
-                            )
-                        )
-                )
-
-                // Page indicator
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
+                        .shadow(
+                            elevation = 10.dp,
+                            shape = RoundedCornerShape(20.dp),
+                            spotColor = primaryColor.copy(alpha = 0.3f)
+                        ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                 ) {
-                    HorizontalPagerIndicator(
-                        pagerState = pagerState,
-                        activeColor = primaryColor,
-                        inactiveColor = Color.White.copy(alpha = 0.5f),
-                        indicatorWidth = 8.dp,
-                        indicatorHeight = 8.dp,
-                        spacing = 4.dp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(20.dp))
+                    ) {
+                        // Carousel with page transformation
+                        HorizontalPager(
+                            count = carouselImages.size,
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 0.dp),
+                        ) { page ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        // Calculate the absolute offset for the current page from the
+                                        // scroll position. We use the absolute value which allows us to mirror
+                                        // any effects for both directions
+                                        val pageOffset = calculateCurrentOffsetForPage(page).absoluteValue
+
+                                        // We animate the scaleX + scaleY, between 85% and 100%
+                                        lerp(
+                                            start = 0.85f,
+                                            stop = 1f,
+                                            fraction = 1f - pageOffset.coerceIn(0f, 1f)
+                                        ).also { scale ->
+                                            scaleX = scale
+                                            scaleY = scale
+                                        }
+
+                                        // We animate the alpha, between 50% and 100%
+                                        alpha = lerp(
+                                            start = 0.5f,
+                                            stop = 1f,
+                                            fraction = 1f - pageOffset.coerceIn(0f, 1f)
+                                        )
+                                    }
+                            ) {
+                                Image(
+                                    painter = painterResource(id = carouselImages[page]),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+
+                        // Gradient overlay for better text visibility
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.Black.copy(alpha = 0.6f)
+                                        ),
+                                        startY = 300f,
+                                        endY = 900f
+                                    )
+                                )
+                        )
+
+                        // Decorative elements
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(16.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(primaryColor.copy(alpha = 0.7f))
+                                .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "📷",
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
+                        }
+
+                        // Page indicator with animation
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(16.dp)
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .shadow(4.dp, RoundedCornerShape(20.dp)),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color.Black.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                HorizontalPagerIndicator(
+                                    pagerState = pagerState,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    activeColor = primaryColor,
+                                    inactiveColor = Color.White.copy(alpha = 0.5f),
+                                    indicatorWidth = 8.dp,
+                                    indicatorHeight = 8.dp,
+                                    spacing = 6.dp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -135,33 +216,35 @@ fun AccueilScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 200.dp) // Match the height of the carousel
+                .padding(top = 220.dp) // Match the height of the carousel
                 .padding(horizontal = 16.dp)
                 .verticalScroll(scrollState)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Categories section with orange accent bar
-            Box(
+            // Categories section with enhanced design
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Orange accent bar
+                // Orange accent bar with rounded corners
                 Box(
                     modifier = Modifier
-                        .width(4.dp)
-                        .height(24.dp)
+                        .width(6.dp)
+                        .height(30.dp)
+                        .clip(RoundedCornerShape(3.dp))
                         .background(primaryColor)
-                        .align(Alignment.CenterStart)
                 )
+
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     text = "Catégories",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 16.dp)
+                    fontSize = 22.sp,
+                    color = Color.Black
                 )
             }
 
@@ -175,68 +258,100 @@ fun AccueilScreen() {
 
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(categoryList) { category ->
-                    CategoryCard(category, primaryColor)
+                    EnhancedCategoryCard(category, primaryColor)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Images Capturées section with orange accent bar
-            Box(
+            // Images Capturées section with enhanced design
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Orange accent bar
+                // Orange accent bar with rounded corners
                 Box(
                     modifier = Modifier
-                        .width(4.dp)
-                        .height(24.dp)
+                        .width(6.dp)
+                        .height(30.dp)
+                        .clip(RoundedCornerShape(3.dp))
                         .background(primaryColor)
-                        .align(Alignment.CenterStart)
                 )
+
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
                     text = "Images Capturées",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 16.dp)
+                    fontSize = 22.sp,
+                    color = Color.Black
                 )
             }
 
             if (imageFiles.isEmpty()) {
-                // Empty state
+                // Enhanced empty state
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                        .height(200.dp)
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = Color.Gray
+                        // Animated pulsing effect
+                        val infiniteTransition = rememberInfiniteTransition()
+                        val scale by infiniteTransition.animateFloat(
+                            initialValue = 0.9f,
+                            targetValue = 1.1f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1500),
+                                repeatMode = RepeatMode.Reverse
+                            )
                         )
+
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
+                                .clip(CircleShape)
+                                .background(primaryColor.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                modifier = Modifier.size(40.dp),
+                                tint = primaryColor
+                            )
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
+
                         Text(
                             text = "Aucune image capturée",
-                            color = Color.Gray,
-                            fontSize = 16.sp,
+                            color = Color.DarkGray,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Medium
                         )
+
                         Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
                             text = "Utilisez la caméra pour détecter des objets",
                             color = Color.Gray,
@@ -247,15 +362,17 @@ fun AccueilScreen() {
                     }
                 }
             } else {
-                // Grid of captured images
+                // Enhanced grid of captured images
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.height((imageFiles.size * 100).coerceAtMost(400).dp)
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .height((imageFiles.size * 100).coerceAtMost(400).dp)
                 ) {
                     items(imageFiles) { file ->
-                        CapturedImageCard(file, primaryColor)
+                        EnhancedCapturedImageCard(file, primaryColor)
                     }
                 }
             }
@@ -267,25 +384,30 @@ fun AccueilScreen() {
 }
 
 @Composable
-fun CategoryCard(category: CategoryItem, primaryColor: Color) {
+fun EnhancedCategoryCard(category: CategoryItem, primaryColor: Color) {
     Card(
         modifier = Modifier
-            .width(120.dp)
-            .height(140.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            .width(130.dp)
+            .height(150.dp)
+            .shadow(8.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Enhanced circular background with border
             Box(
                 modifier = Modifier
-                    .size(70.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
-                    .background(primaryColor.copy(alpha = 0.1f)),
+                    .background(primaryColor.copy(alpha = 0.1f))
+                    .border(2.dp, primaryColor.copy(alpha = 0.3f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -297,35 +419,46 @@ fun CategoryCard(category: CategoryItem, primaryColor: Color) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = category.name,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
+            // Category name with background
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(primaryColor.copy(alpha = 0.1f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = category.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+            }
         }
     }
 }
 
 @Composable
-fun CapturedImageCard(file: File, primaryColor: Color) {
+fun EnhancedCapturedImageCard(file: File, primaryColor: Color) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .height(180.dp)
+            .shadow(8.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Image
+            // Image with rounded corners
             Image(
                 painter = rememberAsyncImagePainter(Uri.fromFile(file)),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(20.dp)),
                 contentScale = ContentScale.Crop
             )
 
-            // Gradient overlay for better text visibility
+            // Enhanced gradient overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -333,34 +466,50 @@ fun CapturedImageCard(file: File, primaryColor: Color) {
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.7f)
+                                Color.Black.copy(alpha = 0.8f)
                             ),
-                            startY = 100f,
+                            startY = 50f,
                             endY = 300f
                         )
                     )
             )
 
-            // Object name
-            Text(
-                text = file.nameWithoutExtension.substringBeforeLast("_"),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+            // Object name with enhanced styling
+            Card(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(12.dp)
-            )
+                    .padding(12.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Black.copy(alpha = 0.6f)
+                )
+            ) {
+                Text(
+                    text = file.nameWithoutExtension.substringBeforeLast("_"),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
 
-            // Indicator dot
-            Box(
+            // Enhanced indicator dot
+            Card(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(12.dp)
-                    .clip(CircleShape)
-                    .background(primaryColor)
-            )
+                    .padding(12.dp)
+                    .size(24.dp),
+                shape = CircleShape,
+                colors = CardDefaults.cardColors(containerColor = primaryColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(2.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                )
+            }
         }
     }
 }
