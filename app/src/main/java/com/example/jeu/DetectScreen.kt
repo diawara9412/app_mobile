@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,6 +45,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import com.example.jeu.translations.ObjectTranslations
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -62,6 +64,30 @@ fun DetectScreen() {
     var isLoading by remember { mutableStateOf(false) }
     var recentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
     var showTips by remember { mutableStateOf(false) }
+    var ttsInitialized by remember { mutableStateOf(false) }
+
+    // Initialize Text-to-Speech
+    var textToSpeech by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    // Initialiser TextToSpeech
+    LaunchedEffect(Unit) {
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                ttsInitialized = true
+                textToSpeech?.language = Locale.FRENCH
+            } else {
+                Toast.makeText(context, "Erreur d'initialisation de la synthèse vocale", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Clean up TTS when the composable is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            textToSpeech?.stop()
+            textToSpeech?.shutdown()
+        }
+    }
 
     val primaryColor = Color(0xFFFFA500)
 
@@ -103,16 +129,29 @@ fun DetectScreen() {
                 labeler.process(image)
                     .addOnSuccessListener { labels ->
                         if (labels.isNotEmpty()) {
-                            val label = labels[0].text
+                            val englishLabel = labels[0].text
+                            // Traduire le label en français en utilisant la classe ObjectTranslations
+                            val frenchLabel = ObjectTranslations.translate(englishLabel)
+
                             CoroutineScope(Dispatchers.Main).launch {
                                 delay(1500)
-                                labelResult = "Objet détecté : $label"
-                                saveImageToStorage(context, safeUri, label)
+                                labelResult = "Objet détecté : $frenchLabel"
+                                saveImageToStorage(context, safeUri, frenchLabel, textToSpeech, ttsInitialized)
+
+                                // Lire à haute voix l'objet détecté
+                                if (ttsInitialized && textToSpeech != null) {
+                                    textToSpeech?.speak(
+                                        "Objet détecté : $frenchLabel",
+                                        TextToSpeech.QUEUE_FLUSH,
+                                        null,
+                                        "detection_id"
+                                    )
+                                }
 
                                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                                 val date = dateFormat.format(Date())
                                 val newDetection = DetectionResult(
-                                    name = label,
+                                    name = frenchLabel,
                                     imageUri = safeUri,
                                     date = date
                                 )
@@ -122,6 +161,17 @@ fun DetectScreen() {
                             }
                         } else {
                             labelResult = "Aucun objet détecté."
+
+                            // Lire le résultat
+                            if (ttsInitialized && textToSpeech != null) {
+                                textToSpeech?.speak(
+                                    "Aucun objet détecté",
+                                    TextToSpeech.QUEUE_FLUSH,
+                                    null,
+                                    "detection_id"
+                                )
+                            }
+
                             isLoading = false
                         }
                     }
@@ -304,7 +354,17 @@ fun DetectScreen() {
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(recentDetections) { detection ->
-                        RecentDetectionCard(detection, primaryColor)
+                        RecentDetectionCard(detection, primaryColor) {
+                            // Lire le nom de l'objet quand la carte est cliquée
+                            if (ttsInitialized && textToSpeech != null) {
+                                textToSpeech?.speak(
+                                    "Objet détecté : ${detection.name}",
+                                    TextToSpeech.QUEUE_FLUSH,
+                                    null,
+                                    "detection_id"
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -439,11 +499,12 @@ fun TipItem(text: String) {
 }
 
 @Composable
-fun RecentDetectionCard(detection: DetectionResult, primaryColor: Color) {
+fun RecentDetectionCard(detection: DetectionResult, primaryColor: Color, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .width(140.dp)
-            .height(180.dp),
+            .height(180.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -508,7 +569,13 @@ data class DetectionResult(
     val date: String
 )
 
-private fun saveImageToStorage(context: Context, uri: Uri, label: String) {
+private fun saveImageToStorage(
+    context: Context,
+    uri: Uri,
+    label: String,
+    textToSpeech: TextToSpeech?,
+    ttsInitialized: Boolean
+) {
     val contentValues = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, "${label}_${System.currentTimeMillis()}.jpg")
         put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")

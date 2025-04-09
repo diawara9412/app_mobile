@@ -62,6 +62,7 @@ fun AccueilScreen() {
     val carouselImages = listOf(
         R.drawable.carou,
         R.drawable.objet,
+
     )
 
     val primaryColor = Color(0xFFFFA500) // Orange color
@@ -249,11 +250,11 @@ fun AccueilScreen() {
             }
 
             val categoryList = listOf(
-                CategoryItem(R.drawable.car1, "Voiture"),
-                CategoryItem(R.drawable.chaise, "Chaise"),
-                CategoryItem(R.drawable.ic_puma, "Puma"),
-                CategoryItem(R.drawable.ic_skechers, "Skechers"),
-                CategoryItem(R.drawable.ic_reebok, "Reebok")
+                CategoryItem(R.drawable.car1, "Transport"),
+                CategoryItem(R.drawable.chaise, "Mobilier"),
+                CategoryItem(R.drawable.animal, "animaux"),
+                CategoryItem(R.drawable.vetement, "Vêtement"),
+                CategoryItem(R.drawable.nouriture, "Nourriture")
             )
 
             LazyRow(

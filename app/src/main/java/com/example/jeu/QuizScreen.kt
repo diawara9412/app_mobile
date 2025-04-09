@@ -2,7 +2,9 @@ package com.example.jeu
 
 import android.net.Uri
 import android.os.Environment
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.delay
 import java.io.File
+import java.util.*
 
 @Composable
 fun QuizScreen() {
@@ -54,6 +57,30 @@ fun QuizScreen() {
     var score by remember { mutableStateOf(0) }
     var showResult by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
+
+    // Text-to-Speech
+    var ttsInitialized by remember { mutableStateOf(false) }
+    var textToSpeech by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    // Initialiser TextToSpeech
+    LaunchedEffect(Unit) {
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                ttsInitialized = true
+                textToSpeech?.language = Locale.FRENCH
+            } else {
+                Toast.makeText(context, "Erreur d'initialisation de la synthèse vocale", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Clean up TTS when the composable is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            textToSpeech?.stop()
+            textToSpeech?.shutdown()
+        }
+    }
 
     val primaryColor = Color(0xFFFFA500) // Orange color
 
@@ -134,7 +161,7 @@ fun QuizScreen() {
             } else if (questions.isEmpty()) {
                 EmptyQuizState()
             } else if (showResult) {
-                QuizResults(score, questions.size, primaryColor) {
+                QuizResults(score, questions.size, primaryColor, textToSpeech, ttsInitialized) {
                     // Reset quiz
                     currentQuestionIndex = 0
                     selectedAnswer = null
@@ -199,6 +226,18 @@ fun QuizScreen() {
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
+                        // Lire la question à haute voix
+                        LaunchedEffect(currentQuestionIndex) {
+                            if (ttsInitialized && textToSpeech != null) {
+                                textToSpeech?.speak(
+                                    questions[currentQuestionIndex].questionText,
+                                    TextToSpeech.QUEUE_FLUSH,
+                                    null,
+                                    "question_id"
+                                )
+                            }
+                        }
+
                         // Question image
                         Box(
                             modifier = Modifier
@@ -233,6 +272,16 @@ fun QuizScreen() {
                             if (!showFeedback) {
                                 selectedAnswer = option
                                 isAnswerCorrect = option == questions[currentQuestionIndex].correctAnswer
+
+                                // Lire l'option sélectionnée
+                                if (ttsInitialized && textToSpeech != null) {
+                                    textToSpeech?.speak(
+                                        option,
+                                        TextToSpeech.QUEUE_FLUSH,
+                                        null,
+                                        "option_id"
+                                    )
+                                }
                             }
                         }
                     )
@@ -277,6 +326,22 @@ fun QuizScreen() {
                         Button(
                             onClick = {
                                 showFeedback = true
+
+                                // Lire le feedback vocal
+                                if (ttsInitialized && textToSpeech != null) {
+                                    val feedbackText = if (isAnswerCorrect == true) {
+                                        "Bonne réponse !"
+                                    } else {
+                                        "Mauvaise réponse. La bonne réponse est : ${questions[currentQuestionIndex].correctAnswer}"
+                                    }
+
+                                    textToSpeech?.speak(
+                                        feedbackText,
+                                        TextToSpeech.QUEUE_FLUSH,
+                                        null,
+                                        "feedback_id"
+                                    )
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -531,8 +596,34 @@ fun AnswerOption(
 }
 
 @Composable
-fun QuizResults(score: Int, totalQuestions: Int, primaryColor: Color, onRestart: () -> Unit) {
+fun QuizResults(
+    score: Int,
+    totalQuestions: Int,
+    primaryColor: Color,
+    textToSpeech: TextToSpeech?,
+    ttsInitialized: Boolean,
+    onRestart: () -> Unit
+) {
     val percentage = (score.toFloat() / totalQuestions) * 100
+
+    // Lire le résultat à haute voix
+    LaunchedEffect(Unit) {
+        if (ttsInitialized && textToSpeech != null) {
+            val resultText = when {
+                percentage >= 80 -> "Excellent ! Votre score est de $score sur $totalQuestions, soit ${percentage.toInt()} pourcent."
+                percentage >= 60 -> "Très bien ! Votre score est de $score sur $totalQuestions, soit ${percentage.toInt()} pourcent."
+                percentage >= 40 -> "Bon travail ! Votre score est de $score sur $totalQuestions, soit ${percentage.toInt()} pourcent."
+                else -> "Continuez à pratiquer ! Votre score est de $score sur $totalQuestions, soit ${percentage.toInt()} pourcent."
+            }
+
+            textToSpeech.speak(
+                resultText,
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "result_id"
+            )
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -610,7 +701,18 @@ fun QuizResults(score: Int, totalQuestions: Int, primaryColor: Color, onRestart:
 
             // Restart button
             Button(
-                onClick = onRestart,
+                onClick = {
+                    onRestart()
+                    // Lire le message de redémarrage
+                    if (ttsInitialized && textToSpeech != null) {
+                        textToSpeech.speak(
+                            "Recommencer le quiz",
+                            TextToSpeech.QUEUE_FLUSH,
+                            null,
+                            "restart_id"
+                        )
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -640,4 +742,3 @@ data class Question(
     val options: List<String>,
     val correctAnswer: String
 )
-

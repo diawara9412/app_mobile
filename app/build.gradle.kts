@@ -92,4 +92,16 @@ dependencies {
 
 // Pour encoder l’image en base64
     implementation ("org.apache.commons:commons-io:1.3.2")
+
+    dependencies {
+        // Vos dépendances existantes...
+
+        // TensorFlow Lite
+        implementation("org.tensorflow:tensorflow-lite:2.14.0")
+        implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+        implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
+
+        // Text-to-Speech (déjà inclus dans Android)
+        implementation("androidx.core:core:1.12.0")
+    }
 }
