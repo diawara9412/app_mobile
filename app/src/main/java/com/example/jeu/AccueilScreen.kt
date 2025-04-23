@@ -67,32 +67,32 @@ fun AccueilScreen() {
 
     val primaryColor = Color(0xFFFFA500) // Orange color
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Fixed carousel at the top with enhanced design
-        if (carouselImages.isNotEmpty()) {
-            val pagerState = rememberPagerState()
-            val coroutineScope = rememberCoroutineScope()
+    Box(modifier = Modifier.fillMaxSize()) { // Conteneur principal prenant tout l'espace disponible
 
-            LaunchedEffect(pagerState) {
+        if (carouselImages.isNotEmpty()) { // Si la liste d'images du carrousel n'est pas vide
+
+            val pagerState = rememberPagerState() // État pour suivre la page actuelle du carrousel
+            val coroutineScope = rememberCoroutineScope() // Portée pour lancer des coroutines
+
+            LaunchedEffect(pagerState) { // Effet lancé à chaque changement d'état du carrousel
                 while (true) {
-                    delay(3000) // Défilement toutes les 3 secondes
-                    val newPage = (pagerState.currentPage + 1) % carouselImages.size
-                    pagerState.animateScrollToPage(newPage)
+                    delay(3000) // Attente de 3 secondes entre les défilements automatiques
+                    val newPage = (pagerState.currentPage + 1) % carouselImages.size // Page suivante en boucle
+                    pagerState.animateScrollToPage(newPage) // Défilement animé vers la nouvelle page
                 }
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
+                    .height(220.dp) // Hauteur fixe du carrousel
                     .padding(horizontal = 16.dp, vertical = 10.dp)
-                    .zIndex(1f)
-            ) {
-                // Shadow effect for the carousel
+                    .zIndex(1f) // Priorité d'affichage
+            ){
                 Card(
                     modifier = Modifier
                         .fillMaxSize()
-                        .shadow(
+                        .shadow( // Ombre de la carte
                             elevation = 10.dp,
                             shape = RoundedCornerShape(20.dp),
                             spotColor = primaryColor.copy(alpha = 0.3f)
@@ -103,11 +103,11 @@ fun AccueilScreen() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(20.dp))
-                    ) {
-                        // Carousel with page transformation
+                            .clip(RoundedCornerShape(20.dp)) // Coins arrondis
+                    ){
+                        // Composant de carrousel avec transformation de page
                         HorizontalPager(
-                            count = carouselImages.size,
+                            count = carouselImages.size, // Nombre de pages
                             state = pagerState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(horizontal = 0.dp),
@@ -116,12 +116,7 @@ fun AccueilScreen() {
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .graphicsLayer {
-                                        // Calculate the absolute offset for the current page from the
-                                        // scroll position. We use the absolute value which allows us to mirror
-                                        // any effects for both directions
                                         val pageOffset = calculateCurrentOffsetForPage(page).absoluteValue
-
-                                        // We animate the scaleX + scaleY, between 85% and 100%
                                         lerp(
                                             start = 0.85f,
                                             stop = 1f,
@@ -130,8 +125,6 @@ fun AccueilScreen() {
                                             scaleX = scale
                                             scaleY = scale
                                         }
-
-                                        // We animate the alpha, between 50% and 100%
                                         alpha = lerp(
                                             start = 0.5f,
                                             stop = 1f,
@@ -143,12 +136,12 @@ fun AccueilScreen() {
                                     painter = painterResource(id = carouselImages[page]),
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.Crop // L’image remplit toute la carte
                                 )
                             }
                         }
 
-                        // Gradient overlay for better text visibility
+                        // Superposition dégradée pour améliorer la lisibilité
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -164,7 +157,7 @@ fun AccueilScreen() {
                                 )
                         )
 
-                        // Decorative elements
+                        // Élément décoratif (icône en haut à gauche)
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
@@ -182,7 +175,7 @@ fun AccueilScreen() {
                             )
                         }
 
-                        // Page indicator with animation
+                        // Indicateurs de pages en bas du carrousel
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
@@ -213,30 +206,28 @@ fun AccueilScreen() {
             }
         }
 
-        // Scrollable content below the fixed carousel
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 220.dp) // Match the height of the carousel
+                .padding(top = 220.dp) // Décalage pour laisser la place au carrousel
                 .padding(horizontal = 16.dp)
-                .verticalScroll(scrollState)
+                .verticalScroll(scrollState) // Scroll vertical
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp)) // Espacement
 
-            // Categories section with enhanced design
+            // Titre "Catégories"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Orange accent bar with rounded corners
                 Box(
                     modifier = Modifier
                         .width(6.dp)
                         .height(30.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(primaryColor)
+                        .background(primaryColor) // Barre décorative
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -262,20 +253,19 @@ fun AccueilScreen() {
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(categoryList) { category ->
-                    EnhancedCategoryCard(category, primaryColor)
+                    EnhancedCategoryCard(category, primaryColor) // Affichage des catégories
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Images Capturées section with enhanced design
+            // Titre "Images Capturées"
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Orange accent bar with rounded corners
                 Box(
                     modifier = Modifier
                         .width(6.dp)
@@ -294,94 +284,107 @@ fun AccueilScreen() {
                 )
             }
 
+            // Vérifie si la liste d'images capturées est vide
             if (imageFiles.isEmpty()) {
-                // Enhanced empty state
+
+                // Affiche une carte stylisée pour indiquer qu'aucune image n'a été capturée
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(vertical = 8.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
+                        .fillMaxWidth() // La carte prend toute la largeur
+                        .height(200.dp) // Hauteur fixe de 200dp
+                        .padding(vertical = 8.dp), // Espacement vertical
+                    shape = RoundedCornerShape(20.dp), // Coins arrondis
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // Élévation (ombre)
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)) // Couleur de fond gris clair
                 ) {
+
+                    // Contenu verticalement centré dans la carte
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .fillMaxSize() // Remplit toute la taille de la carte
+                            .padding(16.dp), // Padding intérieur
+                        horizontalAlignment = Alignment.CenterHorizontally, // Alignement horizontal centré
+                        verticalArrangement = Arrangement.Center // Alignement vertical centré
                     ) {
-                        // Animated pulsing effect
+
+                        // Création d'une animation infinie pour faire un effet de pulsation
                         val infiniteTransition = rememberInfiniteTransition()
                         val scale by infiniteTransition.animateFloat(
-                            initialValue = 0.9f,
-                            targetValue = 1.1f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(1500),
-                                repeatMode = RepeatMode.Reverse
+                            initialValue = 0.9f, // Échelle initiale
+                            targetValue = 1.1f, // Échelle maximale
+                            animationSpec = infiniteRepeatable( // Répète à l’infini
+                                animation = tween(1500), // Durée de 1.5s
+                                repeatMode = RepeatMode.Reverse // Fait un va-et-vient
                             )
                         )
 
+                        // Boîte contenant une icône avec effet d'animation de zoom
                         Box(
                             modifier = Modifier
-                                .size(80.dp)
+                                .size(80.dp) // Taille du cercle
                                 .graphicsLayer {
-                                    scaleX = scale
-                                    scaleY = scale
+                                    scaleX = scale // Applique l’échelle animée sur l’axe X
+                                    scaleY = scale // Applique l’échelle animée sur l’axe Y
                                 }
-                                .clip(CircleShape)
-                                .background(primaryColor.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
+                                .clip(CircleShape) // Forme circulaire
+                                .background(primaryColor.copy(alpha = 0.1f)), // Fond coloré transparent
+                            contentAlignment = Alignment.Center // Centre l’icône
                         ) {
+
+                            // Icône représentant une image
                             Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = primaryColor
+                                imageVector = Icons.Default.Image, // Icône image par défaut
+                                contentDescription = null, // Pas de description car purement décoratif
+                                modifier = Modifier.size(40.dp), // Taille de l’icône
+                                tint = primaryColor // Couleur principale utilisée comme teinte
                             )
                         }
 
+                        // Espacement entre l’icône et le texte
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // Message principal : aucune image capturée
                         Text(
-                            text = "Aucune image capturée",
-                            color = Color.DarkGray,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "Aucune image capturée", // Texte affiché
+                            color = Color.DarkGray, // Couleur du texte
+                            fontSize = 18.sp, // Taille du texte
+                            fontWeight = FontWeight.Medium // Poids du texte
                         )
 
+                        // Espacement entre les deux textes
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        // Message secondaire pour inviter à utiliser la caméra
                         Text(
-                            text = "Utilisez la caméra pour détecter des objets",
-                            color = Color.Gray,
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp)
+                            text = "Utilisez la caméra pour détecter des objets", // Sous-texte d’aide
+                            color = Color.Gray, // Couleur plus claire
+                            fontSize = 14.sp, // Plus petite taille de texte
+                            textAlign = TextAlign.Center, // Centrage du texte
+                            modifier = Modifier.padding(horizontal = 32.dp) // Padding horizontal
                         )
                     }
                 }
-            } else {
-                // Enhanced grid of captured images
+            }
+            else {
+                // Grille des images capturées
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(2), // 2 colonnes
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier
                         .padding(vertical = 8.dp)
-                        .height((imageFiles.size * 100).coerceAtMost(400).dp)
+                        .height((imageFiles.size * 100).coerceAtMost(400).dp) // Hauteur dynamique
                 ) {
                     items(imageFiles) { file ->
-                        EnhancedCapturedImageCard(file, primaryColor)
+                        EnhancedCapturedImageCard(file, primaryColor) // Carte d'image capturée
                     }
                 }
             }
 
-            // Add space at the bottom for the navigation bar
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(80.dp)) // Espace pour la barre de navigation
         }
     }
+
 }
 
 @Composable
