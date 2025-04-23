@@ -131,7 +131,7 @@ fun DetectScreen() {
                         if (labels.isNotEmpty()) {
                             val englishLabel = labels[0].text
                             // Traduire le label en français en utilisant la classe ObjectTranslations
-                            val frenchLabel = ObjectTranslations.translate(englishLabel)
+                                val frenchLabel = ObjectTranslations.translate(englishLabel)
 
                             CoroutineScope(Dispatchers.Main).launch {
                                 delay(1500)
