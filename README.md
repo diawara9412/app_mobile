@@ -1,4 +1,4 @@
-# 🎮 App Mobile: Application Android de Détection d'Objets & Quiz
+# 🎮 Vision X: Application Android de Détection d'Objets & Quiz
 
 Expérience ludique et pédagogique de reconnaissance d'objets, développée en Kotlin et Jetpack Compose.
 
